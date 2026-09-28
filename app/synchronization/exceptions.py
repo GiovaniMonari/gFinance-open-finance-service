@@ -1,0 +1,2 @@
+class RetryableSyncError(Exception):
+    pass
