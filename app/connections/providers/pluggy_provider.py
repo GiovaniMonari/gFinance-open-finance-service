@@ -41,9 +41,51 @@ class PluggyOpenFinanceProvider(OpenFinanceProvider):
                 f"Conexão não encontrada: {connection_id}"
             )
 
-        return await self.client.get_accounts(
+        accounts = await self.client.get_accounts(
             connection.external_id
         )
+
+        return [
+            {
+                "id": account.get("id"),
+                "type": account.get("type"),
+                "subtype": account.get("subtype"),
+                "name": account.get("name"),
+                "balance": account.get("balance"),
+                "currency_code": account.get("currencyCode"),
+                "marketing_name": account.get("marketingName"),
+                "bank": {
+                    "transfer_number": (
+                        account.get("bankData", {}) or {}
+                    ).get("transferNumber"),
+                }
+                if account.get("type") == "BANK"
+                else None,
+                "credit": {
+                    "brand": (
+                        account.get("creditData", {}) or {}
+                    ).get("brand"),
+                    "available_credit_limit": (
+                        account.get("creditData", {}) or {}
+                    ).get("availableCreditLimit"),
+                    "credit_limit": (
+                        account.get("creditData", {}) or {}
+                    ).get("creditLimit"),
+                    "minimum_payment": (
+                        account.get("creditData", {}) or {}
+                    ).get("minimumPayment"),
+                    "balance_due_date": (
+                        account.get("creditData", {}) or {}
+                    ).get("balanceDueDate"),
+                    "status": (
+                        account.get("creditData", {}) or {}
+                    ).get("status"),
+                }
+                if account.get("creditData")
+                else None,
+            }
+            for account in accounts
+        ]
 
     async def get_transactions(
         self,
