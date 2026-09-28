@@ -53,10 +53,6 @@ async def sync_connection(
         connection_repository=connection_repository
     )
 
-    connection_repository = PostgreSQLConnectionRepository(
-        request.app.state.postgres
-    )
-
     account_repository = PostgreSQLAccountRepository(
         request.app.state.postgres
     )
