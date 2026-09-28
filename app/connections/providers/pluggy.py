@@ -124,11 +124,6 @@ class PluggyClient:
             )
 
         print(
-            "PLUGGY TRANSACTIONS STATUS:",
-            response.status_code,
-        )
-
-        print(
             "PLUGGY TRANSACTIONS RESPONSE:",
             response.text,
         )
