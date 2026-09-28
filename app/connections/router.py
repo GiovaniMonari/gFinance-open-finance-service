@@ -110,6 +110,41 @@ async def get_connections(
         ],
     }
 
+@router.get("/{connection_id}/accounts")
+async def get_accounts(
+    connection_id: str,
+    request: Request,
+    user_id: str = Depends(get_user_id),
+    _: bool = Depends(verify_service_token),
+):
+    repository = PostgreSQLConnectionRepository(
+        request.app.state.postgres
+    )
+
+    connection = await repository.find_by_id_and_user_id(
+        connection_id,
+        user_id,
+    )
+
+    if not connection:
+        return {
+            "status": "not_found",
+            "accounts": [],
+        }
+
+    provider = get_open_finance_provider(
+        connection_repository=repository
+    )
+
+    accounts = await provider.get_accounts(
+        connection_id
+    )
+
+    return {
+        "status": "found",
+        "accounts": accounts,
+    }
+
 @router.get("/{connection_id}")
 async def get_connection(
     connection_id: str,
