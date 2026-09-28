@@ -98,24 +98,6 @@ class PluggyClient:
 
         data = response.json()
 
-        return data.get("results", []) 
-
-    async def get_accounts(self, item_id: str) -> list[dict]:
-        api_key = await self.authenticate()
-
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.base_url}/accounts",
-                headers={
-                    "X-API-KEY": api_key,
-                },
-                params={
-                    "itemId": item_id,
-                },
-            )
-
-        response.raise_for_status()
-
-        data = response.json()
+        print("PLUGGY ACCOUNTS:", data)
 
         return data.get("results", [])   

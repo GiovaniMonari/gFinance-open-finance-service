@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS open_finance_connections (
     id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
     provider VARCHAR(50) NOT NULL,
     external_id VARCHAR(255) NOT NULL,
     status VARCHAR(30) NOT NULL,
@@ -20,7 +20,7 @@ CREATE INDEX IF NOT EXISTS idx_open_finance_connections_user_id
 CREATE TABLE IF NOT EXISTS open_finance_accounts (
     id UUID PRIMARY KEY,
     connection_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
     external_id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     bank_name VARCHAR(255) NOT NULL,
@@ -48,7 +48,7 @@ CREATE INDEX IF NOT EXISTS idx_open_finance_accounts_user_id
 CREATE TABLE IF NOT EXISTS open_finance_transactions (
     id UUID PRIMARY KEY,
     account_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
 
     external_id VARCHAR(255) NOT NULL,
     provider VARCHAR(50) NOT NULL,
@@ -85,7 +85,7 @@ CREATE INDEX IF NOT EXISTS idx_open_finance_transactions_date
 CREATE TABLE IF NOT EXISTS open_finance_sync_jobs (
     id UUID PRIMARY KEY,
     connection_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
 
     status VARCHAR(30) NOT NULL,
 
