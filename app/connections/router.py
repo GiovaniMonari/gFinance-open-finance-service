@@ -29,17 +29,19 @@ async def connect_pluggy(
     user_id: str = Depends(get_user_id),
     _: bool = Depends(verify_service_token),
 ):
-    provider = get_open_finance_provider()
+    repository = PostgreSQLConnectionRepository(
+        request.app.state.postgres
+    )
+
+    provider = get_open_finance_provider(
+        connection_repository=repository
+    )
 
     if provider.name != "pluggy":
         raise HTTPException(
             status_code=400,
             detail="Provider Pluggy não está ativo",
         )
-
-    repository = PostgreSQLConnectionRepository(
-        request.app.state.postgres
-    )
 
     service = ConnectionService(
         provider=provider,
