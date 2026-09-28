@@ -118,7 +118,7 @@ class PluggyClient:
 
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{self.base_url}/transactions",
+                f"{self.base_url}/v2/transactions",
                 headers={"X-API-KEY": api_key},
                 params=params,
             )
