@@ -30,10 +30,13 @@ from app.messaging.consumer import (
     start_sync_failed_consumer,
 )
 
+from app.database.init_db import init_db
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     connection = await connect_rabbitmq()
     postgres = await connect_postgres()
+    await init_db(postgres)
 
     app.state.rabbitmq = connection
     app.state.postgres = postgres

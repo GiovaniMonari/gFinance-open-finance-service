@@ -1,25 +1,12 @@
-import asyncio
-
-from app.database.postgres import connect_postgres
+from pathlib import Path
 
 
-async def init_db():
-    pool = await connect_postgres()
+async def init_db(pool):
+    schema_path = Path(__file__).with_name("schema.sql")
 
-    try:
-        with open(
-            "app/database/schema.sql",
-            "r",
-            encoding="utf-8",
-        ) as file:
-            schema = file.read()
+    schema = schema_path.read_text(
+        encoding="utf-8",
+    )
 
-        async with pool.acquire() as connection:
-            await connection.execute(schema)
-
-    finally:
-        await pool.close()
-
-
-if __name__ == "__main__":
-    asyncio.run(init_db())
+    async with pool.acquire() as connection:
+        await connection.execute(schema)
