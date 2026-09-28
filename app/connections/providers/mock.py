@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from app.connections.providers.base import OpenFinanceProvider
-
+from app.connections.providers.mock import MockOpenFinanceProvider
 from app.connections.providers.pluggy_provider import PluggyOpenFinanceProvider
 from app.repositories.connection_repository import ConnectionRepository
 
