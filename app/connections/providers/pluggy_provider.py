@@ -101,4 +101,7 @@ class PluggyOpenFinanceProvider(OpenFinanceProvider):
         account_id: str,
         since=None,
     ):
-        raise NotImplementedError
+        return await self.client.get_transactions(
+            account_id=account_id,
+            since=since,
+        )
