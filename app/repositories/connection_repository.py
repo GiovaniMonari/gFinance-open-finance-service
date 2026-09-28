@@ -33,6 +33,13 @@ class ConnectionRepository(ABC):
         pass
 
     @abstractmethod
+    async def find_by_user_id(
+        self,
+        user_id: str,
+    ) -> list[BankConnection]:
+        pass
+
+    @abstractmethod
     async def update_last_synced_at(
         self,
         connection_id: str,
@@ -212,3 +219,38 @@ class PostgreSQLConnectionRepository(ConnectionRepository):
             status=ConnectionStatus(row["status"]),
             last_synced_at=row["last_synced_at"],
         ) 
+
+    async def find_by_user_id(
+        self,
+        user_id: str,
+    ) -> list[BankConnection]:
+
+        query = """
+            SELECT
+                id,
+                user_id,
+                provider,
+                external_id,
+                status,
+                last_synced_at
+            FROM open_finance_connections
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+        """
+
+        async with self.pool.acquire() as db:
+            rows = await db.fetch(query, user_id)
+
+        return [
+            BankConnection(
+                id=str(row["id"]),
+                user_id=str(row["user_id"]),
+                provider=row["provider"],
+                external_id=row["external_id"],
+                status=ConnectionStatus(row["status"]),
+                last_synced_at=row["last_synced_at"],
+            )
+            for row in rows
+        ]
+
+    

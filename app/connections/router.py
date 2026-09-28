@@ -90,6 +90,26 @@ async def create_connection(
         "connection": connection,
     }
 
+@router.get("")
+async def get_connections(
+    request: Request,
+    user_id: str = Depends(get_user_id),
+    _: bool = Depends(verify_service_token),
+):
+    repository = PostgreSQLConnectionRepository(
+        request.app.state.postgres
+    )
+
+    connections = await repository.find_by_user_id(user_id)
+
+    return {
+        "status": "found",
+        "connections": [
+            connection.model_dump(mode="json")
+            for connection in connections
+        ],
+    }
+
 @router.get("/{connection_id}")
 async def get_connection(
     connection_id: str,
