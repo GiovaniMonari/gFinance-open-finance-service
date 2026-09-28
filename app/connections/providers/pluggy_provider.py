@@ -41,6 +41,14 @@ class PluggyOpenFinanceProvider(OpenFinanceProvider):
                 f"Conexão não encontrada: {connection_id}"
             )
 
+        item = await self.client.get_item(
+            connection.external_id
+        )
+
+        bank_name = (
+            item.get("institution", {}) or {}
+        ).get("name")
+
         accounts = await self.client.get_accounts(
             connection.external_id
         )
@@ -55,6 +63,7 @@ class PluggyOpenFinanceProvider(OpenFinanceProvider):
                 "currency_code": account.get("currencyCode"),
                 "marketing_name": account.get("marketingName"),
                 "bank": {
+                    "name": bank_name,
                     "transfer_number": (
                         account.get("bankData", {}) or {}
                     ).get("transferNumber"),
