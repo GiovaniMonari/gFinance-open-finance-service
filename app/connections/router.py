@@ -184,3 +184,39 @@ async def create_pluggy_connect_token(
         "status": "success",
         "connect_token": token,
     }
+
+@router.get("/{connection_id}/accounts/{account_id}/transactions")
+async def get_transactions(
+    connection_id: str,
+    account_id: str,
+    request: Request,
+    user_id: str = Depends(get_user_id),
+    _: bool = Depends(verify_service_token),
+):
+    repository = PostgreSQLConnectionRepository(
+        request.app.state.postgres
+    )
+
+    connection = await repository.find_by_id_and_user_id(
+        connection_id,
+        user_id,
+    )
+
+    if not connection:
+        return {
+            "status": "not_found",
+            "transactions": [],
+        }
+
+    provider = get_open_finance_provider(
+        connection_repository=repository
+    )
+
+    transactions = await provider.get_transactions(
+        account_id
+    )
+
+    return {
+        "status": "found",
+        "transactions": transactions,
+    }

@@ -101,3 +101,40 @@ class PluggyClient:
         print("PLUGGY ACCOUNTS:", data)
 
         return data.get("results", [])   
+
+    async def get_transactions(
+        self,
+        account_id: str,
+        since=None,
+    ) -> list[dict]:
+        api_key = await self.authenticate()
+
+        params = {
+            "accountId": account_id,
+        }
+
+        if since:
+            params["dateFrom"] = since
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.base_url}/transactions",
+                headers={"X-API-KEY": api_key},
+                params=params,
+            )
+
+        print(
+            "PLUGGY TRANSACTIONS STATUS:",
+            response.status_code,
+        )
+
+        print(
+            "PLUGGY TRANSACTIONS RESPONSE:",
+            response.text,
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        return data.get("results", [])
