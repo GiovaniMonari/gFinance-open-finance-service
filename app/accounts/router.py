@@ -25,7 +25,13 @@ async def sync_accounts(
     user_id: str = Depends(get_user_id),
     _: bool = Depends(verify_service_token),
 ):
-    provider = get_open_finance_provider()
+    connection_repository = PostgreSQLConnectionRepository(
+        request.app.state.postgres
+    )
+
+    provider = get_open_finance_provider(
+        connection_repository=connection_repository
+)
 
     repository = PostgreSQLAccountRepository(
         request.app.state.postgres

@@ -150,7 +150,9 @@ async def start_sync_requested_consumer(
                     data,
                 )
 
-                provider = get_open_finance_provider()
+                provider = get_open_finance_provider(
+                    connection_repository=connection_repository
+                )
 
                 connection_repository = (
                     PostgreSQLConnectionRepository(postgres)

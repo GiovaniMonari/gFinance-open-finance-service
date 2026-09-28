@@ -62,7 +62,13 @@ async def create_connection(
 ):
     user_id = "00000000-0000-0000-0000-000000000001"
 
-    provider = get_open_finance_provider()
+    connection_repository = PostgreSQLConnectionRepository(
+        request.app.state.postgres
+    )
+
+    provider = get_open_finance_provider(
+        connection_repository=connection_repository
+    )
 
     repository = PostgreSQLConnectionRepository(
         request.app.state.postgres
