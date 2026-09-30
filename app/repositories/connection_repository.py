@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import asyncpg
 
+from app.connections.exceptions import OpenFinanceError
 from app.connections.models import (
     BankConnection,
     ConnectionStatus,
@@ -189,11 +190,25 @@ class PostgreSQLConnectionRepository(ConnectionRepository):
         """
 
         async with self.pool.acquire() as db:
-            await db.execute(
+            result = await db.execute(
                 query,
                 connection_id,
                 status.value,
             )
+
+        # The id is the primary key, so a write against a row that has just
+        # been read can only ever touch one row. Anything else means the
+        # change never reached the table, and answering success would hand
+        # the caller a disconnection that the next read takes straight back.
+        affected = int(result.rsplit(" ", 1)[-1])
+
+        if affected != 1:
+            print(
+                "Falha ao gravar o status da conexão "
+                f"{connection_id}: {affected} registro(s) alterado(s)"
+            )
+
+            raise OpenFinanceError()
 
     async def get_last_synced_at(
         self,
