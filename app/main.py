@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
+from app.connections.exceptions import OpenFinanceError
 from app.messaging.rabbitmq import connect_rabbitmq
 
 from app.messaging.publisher import publish_transaction
@@ -79,7 +81,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="gFinance Open Finance Service",
+    title="Econva Open Finance Service",
     lifespan=lifespan,
 )
 
@@ -87,6 +89,26 @@ app.include_router(transactions_router)
 app.include_router(accounts_router)
 app.include_router(connections_router)
 app.include_router(synchronization_router)
+
+
+@app.exception_handler(OpenFinanceError)
+async def open_finance_error_handler(
+    request,
+    error: OpenFinanceError,
+):
+    """Turn domain errors into one consistent answer.
+
+    Every provider failure travels as an ``OpenFinanceError``, so routes can
+    raise them without knowing anything about HTTP and without repeating the
+    same try/except. The message is already pt-BR: it is what the user reads.
+    """
+    return JSONResponse(
+        status_code=error.status_code,
+        content={
+            "status": "error",
+            "message": error.detail,
+        },
+    )
 
 @app.get("/health")
 def health():

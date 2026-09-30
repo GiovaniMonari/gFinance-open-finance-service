@@ -47,6 +47,19 @@ class ConnectionRepository(ABC):
         pass
 
     @abstractmethod
+    async def update_status(
+        self,
+        connection_id: str,
+        status: ConnectionStatus,
+    ) -> None:
+        """Move a connection to a new lifecycle state.
+
+        Called only after the provider has confirmed the transition, so the
+        stored status never runs ahead of what actually happened upstream.
+        """
+        pass
+
+    @abstractmethod
     async def get_last_synced_at(
         self,
         connection_id: str,
@@ -160,6 +173,27 @@ class PostgreSQLConnectionRepository(ConnectionRepository):
                 query,
                 connection_id,
             )    
+
+    async def update_status(
+        self,
+        connection_id: str,
+        status: ConnectionStatus,
+    ) -> None:
+
+        query = """
+            UPDATE open_finance_connections
+            SET
+                status = $2,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+        """
+
+        async with self.pool.acquire() as db:
+            await db.execute(
+                query,
+                connection_id,
+                status.value,
+            )
 
     async def get_last_synced_at(
         self,

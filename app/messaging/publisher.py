@@ -12,7 +12,7 @@ async def publish_transaction(
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        "gfinance.events",
+        "Econva.events",
         aio_pika.ExchangeType.DIRECT,
         durable=True,
     )
@@ -48,7 +48,7 @@ async def publish_event(
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        "gfinance.events",
+        "Econva.events",
         aio_pika.ExchangeType.DIRECT,
         durable=True,
     )

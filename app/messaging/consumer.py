@@ -37,7 +37,7 @@ async def start_consumer(
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        "gfinance.events",
+        "Econva.events",
         aio_pika.ExchangeType.DIRECT,
         durable=True,
     )
@@ -79,7 +79,7 @@ async def start_sync_completed_consumer(connection):
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        "gfinance.events",
+        "Econva.events",
         aio_pika.ExchangeType.DIRECT,
         durable=True,
     )
@@ -111,7 +111,7 @@ async def start_sync_requested_consumer(
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        "gfinance.events",
+        "Econva.events",
         aio_pika.ExchangeType.DIRECT,
         durable=True,
     )
@@ -227,7 +227,7 @@ async def start_sync_failed_consumer(connection):
     channel = await connection.channel()
 
     exchange = await channel.declare_exchange(
-        "gfinance.events",
+        "Econva.events",
         aio_pika.ExchangeType.DIRECT,
         durable=True,
     )

@@ -1,18 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from pydantic import BaseModel
+
+from app.auth.context import get_user_id
+from app.auth.service_auth import verify_service_token
 from app.connections.providers.factory import get_open_finance_provider
+from app.connections.providers.pluggy import PluggyClient
 from app.connections.service import ConnectionService
 from app.repositories.connection_repository import (
     PostgreSQLConnectionRepository,
 )
-from fastapi import APIRouter, Request
-
-from fastapi import Depends
-from app.auth.context import get_user_id
-from app.auth.service_auth import verify_service_token
-from app.connections.providers.pluggy import PluggyClient
-
-from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/connections",
@@ -55,6 +52,43 @@ async def connect_pluggy(
 
     return {
         "status": "connected",
+        "connection": connection.model_dump(mode="json"),
+    }
+
+@router.delete("/{connection_id}")
+async def disconnect_connection(
+    connection_id: str,
+    request: Request,
+    user_id: str = Depends(get_user_id),
+    _: bool = Depends(verify_service_token),
+):
+    """Revoke one user's connection at the provider, then locally.
+
+    Scoped by the user id carried on the request, which only the internal
+    service token can set — a caller can never name somebody else's
+    connection. Failures leave both sides untouched and surface as an
+    ``OpenFinanceError`` handled centrally in ``app.main``.
+    """
+    repository = PostgreSQLConnectionRepository(
+        request.app.state.postgres
+    )
+
+    provider = get_open_finance_provider(
+        connection_repository=repository
+    )
+
+    service = ConnectionService(
+        provider=provider,
+        repository=repository,
+    )
+
+    connection = await service.disconnect_connection(
+        user_id=user_id,
+        connection_id=connection_id,
+    )
+
+    return {
+        "status": "disconnected",
         "connection": connection.model_dump(mode="json"),
     }
 

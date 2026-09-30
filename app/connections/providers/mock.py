@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from app.connections.models import BankConnection
 from app.connections.providers.base import OpenFinanceProvider
 
 
@@ -9,11 +10,23 @@ class MockOpenFinanceProvider(OpenFinanceProvider):
     def name(self) -> str:
         return "mock-provider"
 
-    async def create_connection(self, user_id: str):
+    async def create_connection(
+        self,
+        user_id: str,
+        item_id: str | None = None,
+    ):
+        external_id = item_id or f"mock-connection-{user_id}"
+
         return {
-            "external_id": f"mock-connection-{user_id}",
+            "external_id": external_id,
             "status": "connected",
         }
+
+    async def disconnect(
+        self,
+        connection: BankConnection,
+    ) -> bool:
+        return True
 
     async def get_accounts(self, connection_id: str):
         return [
