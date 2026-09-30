@@ -35,6 +35,19 @@ class AccountRepository(ABC):
     ) -> BankAccount | None:
         pass
 
+    @abstractmethod
+    async def delete_by_connection_id(
+        self,
+        connection_id: str,
+    ) -> None:
+        """Drop every account this link brought in.
+
+        Called when the link is gone for good. The rows describe a
+        connection the user no longer holds, so keeping them would keep
+        bank data around that nothing is authorised to read any more.
+        """
+        pass
+
 
 class PostgreSQLAccountRepository(AccountRepository):
 
@@ -229,3 +242,19 @@ class PostgreSQLAccountRepository(AccountRepository):
             if row["balance"] is not None
             else None,
         )
+
+    async def delete_by_connection_id(
+        self,
+        connection_id: str,
+    ) -> None:
+
+        query = """
+            DELETE FROM open_finance_accounts
+            WHERE connection_id = $1
+        """
+
+        async with self.pool.acquire() as db:
+            await db.execute(
+                query,
+                connection_id,
+            )

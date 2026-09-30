@@ -7,8 +7,14 @@ from app.auth.service_auth import verify_service_token
 from app.connections.providers.factory import get_open_finance_provider
 from app.connections.providers.pluggy import PluggyClient
 from app.connections.service import ConnectionService
+from app.repositories.account_repository import (
+    PostgreSQLAccountRepository,
+)
 from app.repositories.connection_repository import (
     PostgreSQLConnectionRepository,
+)
+from app.repositories.transaction_repository import (
+    PostgreSQLTransactionRepository,
 )
 
 router = APIRouter(
@@ -43,6 +49,12 @@ async def connect_pluggy(
     service = ConnectionService(
         provider=provider,
         repository=repository,
+        account_repository=PostgreSQLAccountRepository(
+            request.app.state.postgres
+        ),
+        transaction_repository=PostgreSQLTransactionRepository(
+            request.app.state.postgres
+        ),
     )
 
     connection = await service.create_connection(
@@ -80,6 +92,12 @@ async def disconnect_connection(
     service = ConnectionService(
         provider=provider,
         repository=repository,
+        account_repository=PostgreSQLAccountRepository(
+            request.app.state.postgres
+        ),
+        transaction_repository=PostgreSQLTransactionRepository(
+            request.app.state.postgres
+        ),
     )
 
     connection = await service.disconnect_connection(
@@ -113,6 +131,12 @@ async def create_connection(
     service = ConnectionService(
         provider=provider,
         repository=repository,
+        account_repository=PostgreSQLAccountRepository(
+            request.app.state.postgres
+        ),
+        transaction_repository=PostgreSQLTransactionRepository(
+            request.app.state.postgres
+        ),
     )
 
     connection = await service.create_connection(

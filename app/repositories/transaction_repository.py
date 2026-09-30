@@ -22,6 +22,19 @@ class TransactionRepository(ABC):
     ) -> list[BankTransaction]:
         pass
 
+    @abstractmethod
+    async def delete_by_connection_id(
+        self,
+        connection_id: str,
+    ) -> None:
+        """Drop every transaction stored for this link's accounts.
+
+        Scoped by connection rather than by user on purpose: the call is
+        reached only from a disconnection that was already scoped to one
+        owner, and the subquery names the accounts of that one link.
+        """
+        pass
+
 
 class PostgreSQLTransactionRepository(TransactionRepository):
 
@@ -127,3 +140,23 @@ class PostgreSQLTransactionRepository(TransactionRepository):
         )
         for row in rows
     ]
+
+    async def delete_by_connection_id(
+        self,
+        connection_id: str,
+    ) -> None:
+
+        query = """
+            DELETE FROM open_finance_transactions
+            WHERE account_id IN (
+                SELECT id
+                FROM open_finance_accounts
+                WHERE connection_id = $1
+            )
+        """
+
+        async with self.pool.acquire() as db:
+            await db.execute(
+                query,
+                connection_id,
+            )

@@ -3,14 +3,15 @@ import uuid
 from app.connections.exceptions import (
     ConnectionAlreadyDisconnectedError,
     ConnectionNotFoundError,
-    OpenFinanceError,
 )
 from app.connections.models import (
     BankConnection,
     ConnectionStatus,
 )
 from app.connections.providers.base import OpenFinanceProvider
+from app.repositories.account_repository import AccountRepository
 from app.repositories.connection_repository import ConnectionRepository
+from app.repositories.transaction_repository import TransactionRepository
 
 
 class ConnectionService:
@@ -19,9 +20,13 @@ class ConnectionService:
         self,
         provider: OpenFinanceProvider,
         repository: ConnectionRepository,
+        account_repository: AccountRepository,
+        transaction_repository: TransactionRepository,
     ):
         self.provider = provider
         self.repository = repository
+        self.account_repository = account_repository
+        self.transaction_repository = transaction_repository
 
     async def create_connection(
         self,
@@ -86,15 +91,31 @@ class ConnectionService:
     ) -> BankConnection:
         """Take one link down at the provider, then record that it is down.
 
-        Order matters: the provider is asked first and only a confirmed
-        revocation flips our own record. If Pluggy fails, the stored status
-        stays "connected", which is still the truth, and the user can retry
-        instead of being left believing their data stopped flowing.
+        Order matters twice over. The provider is asked first, so our own
+        record can never claim a revocation that did not happen: if Pluggy
+        fails, the stored status stays "connected", which is still the
+        truth, and the user can retry instead of being left believing their
+        data stopped flowing.
 
-        ``disconnect`` answers ``False`` when Pluggy had already forgotten
-        the item, which is the outcome the user asked for, not an error.
+        The synced accounts and transactions go next, and the status moves
+        last — for the same reason in reverse. Should the cleanup fail, the
+        link is still recorded as connected, the call is reported as failed,
+        and the next attempt finds the revocation already true upstream and
+        finishes the job. The other order would answer success with bank
+        data still stored and no route back into it.
+
+        ``provider.disconnect`` answers ``False`` when Pluggy had already
+        forgotten the item, which is the outcome the user asked for, not an
+        error.
         """
         await self.provider.disconnect(connection)
+
+        await self.transaction_repository.delete_by_connection_id(
+            connection.id,
+        )
+        await self.account_repository.delete_by_connection_id(
+            connection.id,
+        )
 
         await self.repository.update_status(
             connection.id,
@@ -112,10 +133,14 @@ class ConnectionService:
     ) -> None:
         """Close every link of this user except the one being kept.
 
-        Best effort on purpose: a link that could not be revoked upstream is
-        left alone and stays "connected", because that is what is true. The
-        row being adopted is never touched, so reconnecting to the item the
-        user already owns does not revoke the very connection it is keeping.
+        Best effort on purpose, and the widest catch in this class: this
+        runs inside an already successful connect, so nothing it meets — a
+        provider outage or a failed cleanup — may undo the link the user
+        just made. A link that could not be revoked upstream is left alone
+        and stays "connected", because that is what is true, and the next
+        disconnect sweeps it up. The row being adopted is never touched, so
+        reconnecting to the item the user already owns does not revoke the
+        very connection it is keeping.
         """
         for connection in await self.active_connections(user_id):
             if keep_external_id and connection.external_id == keep_external_id:
@@ -123,11 +148,11 @@ class ConnectionService:
 
             try:
                 await self.revoke(connection)
-            except OpenFinanceError as error:
+            except Exception as error:
                 print(
                     "Não foi possível aposentar a conexão "
                     f"{connection.id} do usuário {user_id}: "
-                    f"{error.detail}"
+                    f"{error}"
                 )
 
     async def disconnect_connection(
